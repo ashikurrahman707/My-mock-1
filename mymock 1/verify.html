@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Verify Email — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<main class="flex-1 flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <h1 class="text-2xl font-bold mb-1">Verify your email</h1>
+    <p id="sent-to" class="text-sm text-gray-500 mb-6">Please verify your email before continuing.</p>
+
+    <div id="dev-code-hint" class="hidden bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3 mb-4"></div>
+
+    <form id="verify-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">6-digit code</label>
+        <input required id="code" type="text" inputmode="numeric" maxlength="6"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-center tracking-[0.5em] text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <p id="error-msg" class="text-sm text-red-600 hidden"></p>
+      <button id="submit-btn" type="submit" class="w-full py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-50">
+        Verify
+      </button>
+    </form>
+
+    <button id="resend-btn" class="w-full mt-3 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200">
+      Resend verification email
+    </button>
+  </div>
+</main>
+
+<footer id="site-footer" class="bg-gray-900"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/components.js"></script>
+<script>
+  window.MyMock.renderNav();
+  window.MyMock.renderFooter();
+
+  const email = sessionStorage.getItem("mymock_pending_email");
+  if (!email) window.location.href = "signup.html";
+  document.getElementById("sent-to").textContent = `We sent a code to ${email}.`;
+
+  if (window.__mymock_last_code) {
+    const hint = document.getElementById("dev-code-hint");
+    hint.classList.remove("hidden");
+    hint.textContent = `Dev mode (email not configured yet): your code is ${window.__mymock_last_code}`;
+  }
+
+  const form = document.getElementById("verify-form");
+  const errorEl = document.getElementById("error-msg");
+  const btn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.classList.add("hidden");
+    const code = document.getElementById("code").value.trim();
+    btn.disabled = true;
+    btn.textContent = "Verifying...";
+    try {
+      const user = await window.MyMock.Auth.verify({ email, code });
+      const session = { userId: user.id, email: user.email, loginAt: Date.now() };
+      localStorage.setItem(window.MyMock.DB_KEYS.SESSION, JSON.stringify(session));
+      sessionStorage.removeItem("mymock_pending_email");
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.classList.remove("hidden");
+      btn.disabled = false;
+      btn.textContent = "Verify";
+    }
+  });
+
+  document.getElementById("resend-btn").addEventListener("click", async () => {
+    try {
+      await window.MyMock.Auth.resendCode(email);
+      alert("A new code has been sent.");
+      if (window.__mymock_last_code) {
+        const hint = document.getElementById("dev-code-hint");
+        hint.classList.remove("hidden");
+        hint.textContent = `Dev mode (email not configured yet): your code is ${window.__mymock_last_code}`;
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+</script>
+</body>
+</html>

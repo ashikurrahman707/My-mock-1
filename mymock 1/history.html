@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>History — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<div class="max-w-4xl mx-auto px-4 py-10">
+  <h1 class="text-2xl font-bold mb-6">Practice History</h1>
+  <div id="list" class="space-y-3"></div>
+</div>
+
+<footer id="site-footer" class="bg-gray-900 mt-16"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/components.js"></script>
+<script>
+const user = window.MyMock.Auth.requireLogin();
+if (user) {
+  window.MyMock.renderNav();
+  window.MyMock.renderFooter();
+
+  const answers = window.MyMock.PracticeStore.getAnswersForUser(user.id).reverse();
+  const list = document.getElementById("list");
+
+  if (answers.length === 0) {
+    list.innerHTML = `<p class="text-gray-500 text-center py-10">No practice sessions yet. <a href="dashboard.html" class="text-indigo-600 font-medium">Start practicing</a></p>`;
+  } else {
+    list.innerHTML = answers.map((a) => `
+      <a href="result.html?answer=${a.id}" class="block bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-400 mb-1">${new Date(a.createdAt).toLocaleString()} · Part ${a.part}</p>
+          <p class="text-sm font-medium truncate max-w-md">${a.questionText}</p>
+        </div>
+        <span class="text-lg font-bold text-indigo-600">${a.evaluation.overall_band}</span>
+      </a>
+    `).join("");
+  }
+}
+</script>
+</body>
+</html>

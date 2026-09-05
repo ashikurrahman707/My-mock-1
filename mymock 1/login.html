@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log In — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<main class="flex-1 flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <h1 class="text-2xl font-bold mb-1">Welcome back</h1>
+    <p class="text-sm text-gray-500 mb-6">Log in to continue practicing.</p>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Email</label>
+        <input required id="email" type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Password</label>
+        <input required id="password" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <p id="error-msg" class="text-sm text-red-600 hidden"></p>
+      <button id="submit-btn" type="submit" class="w-full py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-50">
+        Log in
+      </button>
+    </form>
+
+    <p class="text-sm text-gray-500 mt-6 text-center">
+      Don't have an account? <a href="signup.html" class="text-indigo-600 font-medium">Sign up</a>
+    </p>
+  </div>
+</main>
+
+<footer id="site-footer" class="bg-gray-900"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/components.js"></script>
+<script>
+  window.MyMock.renderNav();
+  window.MyMock.renderFooter();
+
+  const form = document.getElementById("login-form");
+  const errorEl = document.getElementById("error-msg");
+  const btn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.classList.add("hidden");
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    btn.disabled = true;
+    btn.textContent = "Logging in...";
+    try {
+      await window.MyMock.Auth.login({ email, password });
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.classList.remove("hidden");
+      btn.disabled = false;
+      btn.textContent = "Log in";
+    }
+  });
+</script>
+</body>
+</html>

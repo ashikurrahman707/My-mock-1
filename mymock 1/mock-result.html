@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mock Test Result — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<div class="max-w-4xl mx-auto px-4 py-10" id="root">Loading...</div>
+
+<footer id="site-footer" class="bg-gray-900 mt-16"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/components.js"></script>
+<script>
+const user = window.MyMock.Auth.requireLogin();
+if (user) {
+  window.MyMock.renderNav();
+  window.MyMock.renderFooter();
+
+  const params = new URLSearchParams(location.search);
+  const session = window.MyMock.PracticeStore.getSession(params.get("session"));
+  const root = document.getElementById("root");
+
+  if (!session) {
+    root.innerHTML = `<p class="text-center text-gray-500">Mock test not found.</p>`;
+  } else {
+    const allAnswers = window.MyMock.PracticeStore.getAnswersForUser(user.id);
+    const answers = session.answers.map((id) => allAnswers.find((a) => a.id === id)).filter(Boolean);
+    const overallBand = (answers.reduce((s, a) => s + a.evaluation.overall_band, 0) / answers.length).toFixed(1);
+
+    const critAvg = (key) => {
+      const vals = answers.map((a) => a.evaluation[key].band);
+      return (vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1);
+    };
+    const criteria = [
+      { key: "fluency_coherence", label: "Fluency & Coherence" },
+      { key: "lexical_resource", label: "Lexical Resource" },
+      { key: "grammatical_range_accuracy", label: "Grammar" },
+      { key: "pronunciation", label: "Pronunciation" },
+    ].map((c) => ({ ...c, avg: parseFloat(critAvg(c.key)) }));
+    criteria.sort((a, b) => b.avg - a.avg);
+
+    root.innerHTML = `
+      <div class="text-center mb-10">
+        <p class="text-sm text-gray-500 mb-1">Mock Test — Overall Estimated Band</p>
+        <p class="text-5xl font-extrabold text-indigo-600">${overallBand}</p>
+        <p class="text-xs text-gray-400 mt-2">Practice estimate only — not an official IELTS score.</p>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        ${criteria.map((c) => `
+          <div class="bg-white rounded-xl border border-gray-100 p-4 text-center">
+            <p class="text-xs text-gray-500 mb-1">${c.label}</p>
+            <p class="text-2xl font-bold text-indigo-600">${c.avg}</p>
+          </div>`).join("")}
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 p-5 mb-8">
+        <p class="text-sm text-gray-600"><span class="font-semibold text-green-700">Strongest:</span> ${criteria[0].label} (${criteria[0].avg})</p>
+        <p class="text-sm text-gray-600 mt-1"><span class="font-semibold text-amber-700">Weakest:</span> ${criteria[criteria.length - 1].label} (${criteria[criteria.length - 1].avg}) — focus your next practice sessions here.</p>
+      </div>
+
+      <h3 class="font-semibold mb-3">Question-by-question results</h3>
+      <div class="space-y-2 mb-10">
+        ${answers.map((a, i) => `
+          <a href="result.html?answer=${a.id}" class="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition">
+            <div>
+              <p class="text-xs text-gray-400">Q${i + 1} · Part ${a.part}</p>
+              <p class="text-sm font-medium truncate max-w-md">${a.questionText}</p>
+            </div>
+            <span class="text-lg font-bold text-indigo-600">${a.evaluation.overall_band}</span>
+          </a>`).join("")}
+      </div>
+
+      <div class="flex justify-center gap-3">
+        <a href="dashboard.html" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700">Back to Dashboard</a>
+        <a href="history.html" class="px-5 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200">View History</a>
+      </div>
+    `;
+  }
+}
+</script>
+</body>
+</html>

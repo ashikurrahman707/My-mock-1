@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <h1 id="welcome" class="text-2xl font-bold mb-1">Welcome back</h1>
+  <p class="text-gray-500 mb-8">Here's your practice overview.</p>
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    <div class="bg-white rounded-2xl border border-gray-100 p-5">
+      <p class="text-sm text-gray-500">Total Answers</p>
+      <p id="stat-total" class="text-2xl font-bold mt-1">0</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5">
+      <p class="text-sm text-gray-500">Mock Tests</p>
+      <p id="stat-mocks" class="text-2xl font-bold mt-1">0</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5">
+      <p class="text-sm text-gray-500">Average Band</p>
+      <p id="stat-avg" class="text-2xl font-bold mt-1">—</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-5">
+      <p class="text-sm text-gray-500">Best Band</p>
+      <p id="stat-best" class="text-2xl font-bold mt-1">—</p>
+    </div>
+  </div>
+
+  <!-- Practice options -->
+  <h2 id="practice" class="text-lg font-semibold mb-4">Practice by part</h2>
+  <div class="grid md:grid-cols-3 gap-4 mb-10">
+    <a href="practice.html?part=1" class="block bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition">
+      <p class="text-xs font-semibold text-indigo-600 mb-1">PART 1</p>
+      <h3 class="font-semibold mb-1">Introduction Questions</h3>
+      <p class="text-sm text-gray-500">Short familiar-topic questions. 1 min each.</p>
+    </a>
+    <a href="practice.html?part=2" class="block bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition">
+      <p class="text-xs font-semibold text-indigo-600 mb-1">PART 2</p>
+      <h3 class="font-semibold mb-1">Cue Card</h3>
+      <p class="text-sm text-gray-500">1 min prep, then speak for up to 2 min.</p>
+    </a>
+    <a href="practice.html?part=3" class="block bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition">
+      <p class="text-xs font-semibold text-indigo-600 mb-1">PART 3</p>
+      <h3 class="font-semibold mb-1">Discussion Questions</h3>
+      <p class="text-sm text-gray-500">Deeper follow-up questions. Up to 90 sec.</p>
+    </a>
+  </div>
+
+  <div id="mock" class="bg-indigo-600 rounded-2xl p-6 mb-10 flex items-center justify-between flex-wrap gap-4">
+    <div>
+      <h3 class="text-white font-semibold text-lg mb-1">Full Mock Test</h3>
+      <p class="text-indigo-100 text-sm">10 questions: 5 Part 1, 1 Part 2, 4 related Part 3 — just like the real test.</p>
+    </div>
+    <button id="start-mock-btn" class="px-5 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50">Start Mock Test</button>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl border border-gray-100 p-6">
+      <h3 class="font-semibold mb-3">Recent Practice</h3>
+      <div id="recent-list" class="space-y-2 text-sm text-gray-600">No answers yet — start practicing above.</div>
+      <a href="history.html" class="inline-block mt-4 text-sm text-indigo-600 font-medium">View full history →</a>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-100 p-6">
+      <h3 class="font-semibold mb-3">Weakest Criterion</h3>
+      <div id="weakest" class="text-sm text-gray-600">Not enough data yet.</div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer" class="bg-gray-900 mt-16"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/components.js"></script>
+<script>
+  const user = window.MyMock.Auth.requireLogin();
+  if (user) {
+    window.MyMock.renderNav("practice");
+    window.MyMock.renderFooter();
+    document.getElementById("welcome").textContent = `Welcome back, ${user.name.split(" ")[0]}`;
+
+    const answers = window.MyMock.PracticeStore.getAnswersForUser(user.id);
+    const sessions = window.MyMock.PracticeStore.getSessionsForUser(user.id);
+    const mockCount = sessions.filter((s) => s.type === "mock_test" && s.status !== "in_progress").length;
+
+    document.getElementById("stat-total").textContent = answers.length;
+    document.getElementById("stat-mocks").textContent = mockCount;
+
+    if (answers.length > 0) {
+      const bands = answers.map((a) => a.evaluation.overall_band);
+      const avg = (bands.reduce((s, b) => s + b, 0) / bands.length).toFixed(1);
+      const best = Math.max(...bands).toFixed(1);
+      document.getElementById("stat-avg").textContent = avg;
+      document.getElementById("stat-best").textContent = best;
+
+      const recentList = document.getElementById("recent-list");
+      recentList.innerHTML = answers.slice(-5).reverse().map((a) => `
+        <div class="flex items-center justify-between border-b border-gray-50 pb-2">
+          <span class="truncate max-w-[70%]">Part ${a.part} · ${new Date(a.createdAt).toLocaleDateString()}</span>
+          <span class="font-semibold text-indigo-600">${a.evaluation.overall_band}</span>
+        </div>`).join("");
+
+      const critTotals = {};
+      answers.forEach((a) => {
+        ["fluency_coherence", "lexical_resource", "grammatical_range_accuracy", "pronunciation"].forEach((k) => {
+          critTotals[k] = critTotals[k] || [];
+          critTotals[k].push(a.evaluation[k].band);
+        });
+      });
+      const critAvgs = Object.entries(critTotals).map(([k, arr]) => ({
+        key: k, avg: arr.reduce((s, v) => s + v, 0) / arr.length,
+      }));
+      critAvgs.sort((a, b) => a.avg - b.avg);
+      const weakest = critAvgs[0];
+      const labelMap = {
+        fluency_coherence: "Fluency & Coherence", lexical_resource: "Lexical Resource",
+        grammatical_range_accuracy: "Grammar", pronunciation: "Pronunciation",
+      };
+      document.getElementById("weakest").innerHTML = `<span class="font-semibold">${labelMap[weakest.key]}</span> — average band ${weakest.avg.toFixed(1)}. Consider focused practice here.`;
+    }
+
+    document.getElementById("start-mock-btn").addEventListener("click", async () => {
+      const existing = await window.MyMock.Questions.getOrResumeMockTest(user.id);
+      if (existing && confirm("You have a mock test in progress. Continue it? (Cancel = start a new one)")) {
+        window.location.href = `mock-test.html?session=${existing.id}`;
+        return;
+      }
+      const session = await window.MyMock.Questions.generateMockTest(user.id);
+      window.location.href = `mock-test.html?session=${session.id}`;
+    });
+  }
+</script>
+</body>
+</html>

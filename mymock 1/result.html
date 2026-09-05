@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Result — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<div class="max-w-3xl mx-auto px-4 py-10" id="result-root">Loading...</div>
+
+<footer id="site-footer" class="bg-gray-900 mt-16"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/components.js"></script>
+<script>
+const user = window.MyMock.Auth.requireLogin();
+if (user) {
+  window.MyMock.renderNav();
+  window.MyMock.renderFooter();
+
+  const params = new URLSearchParams(location.search);
+  const answerId = params.get("answer");
+  const all = window.MyMock.PracticeStore.getAnswersForUser(user.id);
+  const answer = all.find((a) => a.id === answerId);
+  const root = document.getElementById("result-root");
+
+  if (!answer) {
+    root.innerHTML = `<p class="text-center text-gray-500">Result not found.</p>`;
+  } else {
+    const ev = answer.evaluation;
+    const confBadge = (c) => {
+      const pct = Math.round(c * 100);
+      const color = c >= 0.6 ? "bg-green-100 text-green-700" : c >= 0.3 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700";
+      return `<span class="text-xs px-2 py-0.5 rounded-full ${color}">confidence ${pct}%</span>`;
+    };
+    const criterionCard = (c) => `
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-sm font-medium text-gray-700">${c.label}</p>
+          ${confBadge(c.confidence)}
+        </div>
+        <p class="text-2xl font-bold text-indigo-600 mb-2">${c.band}</p>
+        <p class="text-xs text-gray-500">${c.feedback}</p>
+      </div>`;
+
+    root.innerHTML = `
+      <div class="text-center mb-8">
+        <p class="text-sm text-gray-500 mb-1">Practice Score Estimate</p>
+        <p class="text-5xl font-extrabold text-indigo-600">${ev.overall_band}</p>
+        <p class="text-xs text-gray-400 mt-2 max-w-md mx-auto">This is a rule-based practice estimate, not an official IELTS score. Overall confidence: ${Math.round(ev.overall_confidence * 100)}%.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        ${criterionCard(ev.fluency_coherence)}
+        ${criterionCard(ev.lexical_resource)}
+        ${criterionCard(ev.grammatical_range_accuracy)}
+        ${criterionCard(ev.pronunciation)}
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 p-5 mb-4">
+        <h3 class="font-semibold mb-2">Question</h3>
+        <p class="text-sm text-gray-600">${answer.questionText}</p>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-100 p-5 mb-4">
+        <h3 class="font-semibold mb-2">Transcript</h3>
+        <p class="text-sm text-gray-600">${answer.transcript || "(no speech was detected)"}</p>
+      </div>
+
+      ${ev.grammar_corrections.length > 0 ? `
+      <div class="bg-white rounded-xl border border-gray-100 p-5 mb-4">
+        <h3 class="font-semibold mb-3">Grammar Corrections</h3>
+        <div class="space-y-3">
+          ${ev.grammar_corrections.map((g) => `
+            <div class="text-sm">
+              <p class="text-red-600 line-through">${g.original}</p>
+              <p class="text-green-700">${g.suggestion}</p>
+              <p class="text-gray-500 text-xs mt-1">${g.explanation}</p>
+            </div>`).join("")}
+        </div>
+      </div>` : ""}
+
+      <div class="grid md:grid-cols-2 gap-4 mb-8">
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="font-semibold mb-2 text-green-700">Strengths</h3>
+          <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+            ${ev.strengths.length ? ev.strengths.map((s) => `<li>${s}</li>`).join("") : "<li>Keep practicing to build strengths.</li>"}
+          </ul>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="font-semibold mb-2 text-amber-700">Improvements</h3>
+          <ul class="text-sm text-gray-600 list-disc list-inside space-y-1">
+            ${ev.improvements.length ? ev.improvements.map((s) => `<li>${s}</li>`).join("") : "<li>No major issues detected.</li>"}
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-3 justify-center">
+        <a href="practice.html?part=${answer.part}" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700">Practice Again</a>
+        <a href="history.html" class="px-5 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200">View History</a>
+        <a href="dashboard.html" class="px-5 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200">Dashboard</a>
+      </div>
+    `;
+  }
+}
+</script>
+</body>
+</html>

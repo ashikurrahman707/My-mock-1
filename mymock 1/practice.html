@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Practice — My-Mock</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #0f1420; }
+  .wave-bar { width: 4px; border-radius: 2px; background: #38bdf8; height: 8px; transition: height .15s ease; }
+  .wave-bars.active .wave-bar { animation: wave 0.9s ease-in-out infinite; }
+  .wave-bar:nth-child(2) { animation-delay: .1s !important; }
+  .wave-bar:nth-child(3) { animation-delay: .2s !important; }
+  .wave-bar:nth-child(4) { animation-delay: .3s !important; }
+  .wave-bar:nth-child(5) { animation-delay: .4s !important; }
+  @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 28px; } }
+</style>
+</head>
+<body class="text-gray-100 min-h-screen">
+
+<header id="site-nav" class="bg-white border-b border-gray-100"></header>
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="grid md:grid-cols-2 gap-6">
+
+    <!-- LEFT: question + status + controls -->
+    <div class="bg-[#161c2c] rounded-2xl border border-white/5 p-6">
+      <span id="part-badge" class="text-xs font-semibold text-sky-400 bg-sky-400/10 px-3 py-1 rounded-full">PART 1</span>
+
+      <div id="question-block" class="my-5">
+        <p id="question-text" class="text-lg font-medium leading-relaxed text-white">Loading question…</p>
+        <ul id="cue-points" class="list-disc list-inside text-sm text-gray-400 mt-3 space-y-1 hidden"></ul>
+      </div>
+
+      <button id="repeat-btn" class="px-3 py-1.5 rounded-lg bg-white/5 text-gray-200 text-sm font-medium hover:bg-white/10 flex items-center gap-1 mb-5">
+        🔊 Repeat question
+      </button>
+
+      <!-- status rows -->
+      <div class="space-y-2 mb-5 text-sm">
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <span class="text-gray-400">Speak In</span>
+          <span id="speak-in-val" class="font-mono font-semibold text-gray-200">0</span>
+        </div>
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <span class="text-gray-400">Preparation Time</span>
+          <span id="prep-val" class="font-mono font-semibold text-gray-200">0</span>
+        </div>
+        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+          <span class="text-gray-400">Speaking Time</span>
+          <span id="speaking-val" class="font-mono font-semibold text-gray-200">0:00</span>
+        </div>
+      </div>
+
+      <div id="wave-bars" class="wave-bars flex items-end gap-1 h-8 mb-6">
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+      </div>
+
+      <div id="controls">
+        <button id="start-btn" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Start Recording</button>
+      </div>
+
+      <div id="live-transcript-wrap" class="mt-4 hidden">
+        <p class="text-xs text-gray-500 mb-1">Live transcript</p>
+        <p id="live-transcript" class="text-sm text-gray-300 bg-black/20 rounded-lg p-3 min-h-[3rem]"></p>
+      </div>
+
+      <div id="demo-answer-wrap" class="mt-4 hidden">
+        <p class="text-xs text-gray-500 mb-1">Model answer</p>
+        <p id="demo-answer-text" class="text-sm text-gray-300 bg-black/20 rounded-lg p-3"></p>
+      </div>
+
+      <div class="flex items-center gap-2 mt-6">
+        <button id="demo-btn" class="px-4 py-2 rounded-lg bg-white/5 text-gray-300 text-sm font-medium hover:bg-white/10">Demo Answer</button>
+        <div class="flex-1"></div>
+        <button id="stop-btn" class="px-5 py-2 rounded-lg bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20">Stop</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: camera + recorded response -->
+    <div class="space-y-6">
+      <div class="bg-[#161c2c] rounded-2xl border border-white/5 p-6">
+        <h3 class="text-white font-semibold mb-4">Camera View</h3>
+        <video id="camera-preview" autoplay muted playsinline class="w-full rounded-xl bg-black aspect-video"></video>
+      </div>
+      <div class="bg-[#161c2c] rounded-2xl border border-white/5 p-6">
+        <h3 class="text-white font-semibold mb-4">Recorded Response</h3>
+        <audio id="playback" controls class="w-full"></audio>
+        <p id="no-recording-note" class="text-sm text-gray-500">Your recording will appear here after you finish speaking.</p>
+        <div id="post-record-controls" class="hidden mt-4 flex gap-2">
+          <button id="rerecord-btn" class="flex-1 py-2.5 rounded-lg bg-white/5 text-gray-200 font-medium hover:bg-white/10">Re-record</button>
+          <button id="submit-btn" class="flex-1 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer" class="bg-gray-900 mt-16"></footer>
+
+<script src="js/store.js"></script>
+<script src="js/email.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/practice-room.js"></script>
+<script src="js/evaluation.js"></script>
+<script src="js/components.js"></script>
+<script>
+const user = window.MyMock.Auth.requireLogin();
+if (user) {
+  window.MyMock.renderNav("practice");
+  window.MyMock.renderFooter();
+
+  const params = new URLSearchParams(location.search);
+  const part = parseInt(params.get("part") || "1", 10);
+  const timing = window.MyMock.PART_TIMING[part];
+  document.getElementById("part-badge").textContent = `PART ${part}`;
+
+  let currentQuestion = null;
+  let questionText = "";
+  let cancelTimer = null;
+  let lastResult = null;
+
+  const playback = document.getElementById("playback");
+  playback.classList.add("hidden");
+
+  const room = new window.MyMock.PracticeRoom({
+    onTranscriptUpdate: (text) => {
+      document.getElementById("live-transcript").textContent = text || "(listening...)";
+    },
+  });
+
+  async function loadQuestion() {
+    const pool = await window.MyMock.Questions.getPart(part);
+    currentQuestion = pool[Math.floor(Math.random() * pool.length)];
+    if (part === 2) {
+      questionText = currentQuestion.cue_card_title + " " + currentQuestion.cue_card_points.join(". ");
+      document.getElementById("question-text").textContent = currentQuestion.cue_card_title;
+      const list = document.getElementById("cue-points");
+      list.innerHTML = currentQuestion.cue_card_points.map((p) => `<li>${p}</li>`).join("");
+      list.classList.remove("hidden");
+    } else {
+      questionText = currentQuestion.question;
+      document.getElementById("question-text").textContent = currentQuestion.question;
+    }
+    document.getElementById("demo-answer-text").textContent = currentQuestion.model_answer || "No model answer available for this question.";
+    room.speakQuestion(questionText);
+  }
+
+  document.getElementById("repeat-btn").addEventListener("click", () => room.repeatQuestion(questionText));
+
+  document.getElementById("demo-btn").addEventListener("click", () => {
+    document.getElementById("demo-answer-wrap").classList.toggle("hidden");
+  });
+
+  document.getElementById("stop-btn").addEventListener("click", () => {
+    if (confirm("Stop this practice session?")) {
+      if (cancelTimer) cancelTimer();
+      room.stopMedia();
+      window.location.href = "dashboard.html";
+    }
+  });
+
+  document.getElementById("start-btn").addEventListener("click", async () => {
+    const mediaResult = await room.requestMedia();
+    if (!mediaResult.ok) {
+      alert("Camera/microphone permission is needed to practice: " + mediaResult.error);
+      return;
+    }
+    document.getElementById("camera-preview").srcObject = room.mediaStream;
+    document.getElementById("controls").classList.add("hidden");
+    beginFlow();
+  });
+
+  function beginFlow() {
+    if (part === 2) {
+      cancelTimer = window.MyMock.runCountdown(timing.prepMs, {
+        onTick: (ms) => { document.getElementById("prep-val").textContent = window.MyMock.formatMs(ms); },
+        onComplete: () => runSpeakInCountdown(),
+      });
+    } else {
+      runSpeakInCountdown();
+    }
+  }
+
+  function runSpeakInCountdown() {
+    let count = 3;
+    document.getElementById("speak-in-val").textContent = count;
+    const iv = setInterval(() => {
+      count -= 1;
+      document.getElementById("speak-in-val").textContent = Math.max(count, 0);
+      if (count <= 0) {
+        clearInterval(iv);
+        startSpeaking();
+      }
+    }, 1000);
+    cancelTimer = () => clearInterval(iv);
+  }
+
+  function startSpeaking() {
+    document.getElementById("live-transcript-wrap").classList.remove("hidden");
+    document.getElementById("wave-bars").classList.add("active");
+    room.startRecording();
+    cancelTimer = window.MyMock.runCountdown(timing.speakMs, {
+      onTick: (ms) => { document.getElementById("speaking-val").textContent = window.MyMock.formatMs(ms); },
+      onComplete: () => finishRecording(),
+    });
+  }
+
+  async function finishRecording() {
+    if (cancelTimer) cancelTimer();
+    document.getElementById("wave-bars").classList.remove("active");
+    const result = await room.stopRecording();
+    lastResult = result;
+    const audioUrl = URL.createObjectURL(result.blob);
+    playback.src = audioUrl;
+    playback.classList.remove("hidden");
+    document.getElementById("no-recording-note").classList.add("hidden");
+    document.getElementById("post-record-controls").classList.remove("hidden");
+  }
+
+  document.getElementById("rerecord-btn").addEventListener("click", () => {
+    document.getElementById("post-record-controls").classList.add("hidden");
+    playback.classList.add("hidden");
+    document.getElementById("no-recording-note").classList.remove("hidden");
+    document.getElementById("live-transcript").textContent = "";
+    document.getElementById("speak-in-val").textContent = "0";
+    document.getElementById("prep-val").textContent = "0";
+    document.getElementById("speaking-val").textContent = "0:00";
+    room.reset();
+    beginFlow();
+  });
+
+  let submitting = false;
+  document.getElementById("submit-btn").addEventListener("click", async () => {
+    if (submitting) return;
+    submitting = true;
+    const btn = document.getElementById("submit-btn");
+    btn.textContent = "Evaluating...";
+    btn.disabled = true;
+
+    const evaluation = await window.MyMock.evaluateAnswer({
+      transcript: lastResult.transcript,
+      words: lastResult.words,
+      totalDurationMs: lastResult.durationMs,
+      part,
+      expectedDurationMs: timing.speakMs,
+    });
+
+    const answer = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      part,
+      questionId: currentQuestion.id,
+      questionText: part === 2 ? currentQuestion.cue_card_title : currentQuestion.question,
+      transcript: lastResult.transcript,
+      durationMs: lastResult.durationMs,
+      evaluation,
+      createdAt: new Date().toISOString(),
+    };
+    window.MyMock.PracticeStore.saveAnswer(answer);
+    room.stopMedia();
+    window.location.href = `result.html?answer=${answer.id}`;
+  });
+
+  loadQuestion();
+}
+</script>
+</body>
+</html>
